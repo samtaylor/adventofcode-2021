@@ -24,7 +24,7 @@ object DayEight : Day<Int, Int>("/day-eight.txt") {
     override val partTwoResult: Int
         get() {
 
-            return input.map { calculateOutput(it) }.sum()
+            return input.sumOf { calculateOutput(it) }
         }
 
     private fun calculateOutput(datum: Data): Int {
@@ -43,13 +43,13 @@ object DayEight : Day<Int, Int>("/day-eight.txt") {
         numbers[5] = findNumberFive(datum.uniqueSignalPatterns, numbers[3], numbers[6])
         numbers[2] = findNumberTwo(datum.uniqueSignalPatterns, numbers[3], numbers[5])
 
-        var result = ""
-        datum.outputValues.forEach { outputDigit ->
+        return StringBuilder().apply {
 
-            result += numbers.indexOf(numbers.first { it.exactMatchesString(outputDigit) })
-        }
+            datum.outputValues.forEach { outputDigit ->
 
-        return result.toInt()
+                append(numbers.indexOf(numbers.first { it.exactMatchesString(outputDigit) }))
+            }
+        }.toString().toInt()
     }
 
     private fun findNumberOne(uniqueSignalPattern: List<String>) =
