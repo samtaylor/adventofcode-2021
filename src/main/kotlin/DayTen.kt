@@ -20,24 +20,24 @@ object DayTen : Day<Long, Long>("/day-ten.txt") {
             }
         }
 
-    private fun emptyStack(): Stack = Stack()
-    class Stack {
-
-        private val stack = mutableListOf<Char>()
-
-        fun push(item: Char) = stack.add(0, item)
-
-        fun pop() = stack.removeAt(0)
-
-        fun print(openingAndClosingChars: Map<Char, Char>) = stack.map { openingAndClosingChars[it] }.joinToString("")
-    }
+//    private fun emptyStack(): Stack = Stack()
+//    class Stack {
+//
+//        private val stack = mutableListOf<Char>()
+//
+//        fun push(item: Char) = stack.add(0, item)
+//
+//        fun pop() = stack.removeAt(0)
+//
+//        fun print(openingAndClosingChars: Map<Char, Char>) = stack.map { openingAndClosingChars[it] }.joinToString("")
+//    }
 
     private fun scanForSyntaxErrors(): SyntaxErrors {
 
         val corruptLines = mutableListOf<String>()
         var errorScore = 0L
         data.forEach { line ->
-            val stack = emptyStack()
+            val stack = emptyStackOf<Char>()
 
             line.toCharArray().forEach { char ->
 
@@ -65,7 +65,7 @@ object DayTen : Day<Long, Long>("/day-ten.txt") {
             val corruptLines = scanForSyntaxErrors().corruptLines
             data.filter { line -> !corruptLines.contains(line) }.forEach { line ->
 
-                val stack = emptyStack()
+                val stack = emptyStackOf<Char>()
                 line.toCharArray().forEach { char ->
 
                     if (openingAndClosingChars.keys.contains(char)) {
@@ -77,7 +77,7 @@ object DayTen : Day<Long, Long>("/day-ten.txt") {
                     }
                 }
 
-                val autocomplete = stack.print(openingAndClosingChars)
+                val autocomplete = stack.print("") { openingAndClosingChars[it] }
 
                 var autocompleteScore = 0L
                 autocomplete.toCharArray().forEach { char ->
