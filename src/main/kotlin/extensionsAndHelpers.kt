@@ -32,9 +32,14 @@ class Stack<T> {
 
     private val stack = mutableListOf<T>()
 
+    val size: Int
+    get() = stack.size
+
     fun push(item: T) = stack.add(0, item)
 
     fun pop() = stack.removeAt(0)
+
+    fun peak() = stack[0]
 
     fun contains(item: T) = stack.contains(item)
 

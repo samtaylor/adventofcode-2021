@@ -13,63 +13,96 @@ class DaySixteen(data: String) {
             }.sum()
         }
     val partTwoResult: Long
-        get() = TODO("Not yet implemented")
+        get() {
 
-    private fun parsePacket(index: Int, versions: MutableList<Long>): Int {
+            val stack = Stack<Instruction>()
 
-        try {
+            parsePacket(0, stack = stack)
 
-            dataAsBinaryString.packageVersion(index).let { packageVersion ->
+            return (stack.pop() as Value).value
+        }
 
-                debugPrintln("package version = $packageVersion")
-                dataAsBinaryString.typeId(packageVersion.offset).let { typeId ->
+    private fun parsePacket(index: Int, versions: MutableList<Long>? = null, stack: Stack<Instruction>? = null): Int {
 
-                    debugPrintln("type id = $typeId")
-                    if (typeId.value == 4L) {
+        var subPacketOffset: Int
+        dataAsBinaryString.packageVersion(index).let { packageVersion ->
 
-                        val literalValue = dataAsBinaryString.literalValue(typeId.offset)
-                        debugPrintln("literal value = $literalValue")
-                        versions.add(packageVersion.value)
-                        return literalValue.offset
-                    } else {
+            dataAsBinaryString.typeId(packageVersion.offset).let { typeId ->
 
-                        dataAsBinaryString.lengthTypeId(typeId.offset).let { lengthTypeId ->
+                if (typeId.value == 4L) {
 
-                            debugPrintln("length type id = ${lengthTypeId.value}")
-                            if (lengthTypeId.value == 1L) {
+                    val literalValue = dataAsBinaryString.literalValue(typeId.offset)
+                    versions?.add(packageVersion.value)
+                    stack?.push(Value(literalValue.value))
+                    subPacketOffset =  literalValue.offset
+                } else {
 
-                                val numberOfSubPackets = dataAsBinaryString.numberOfSubPackets(lengthTypeId.offset)
-                                debugPrintln("number of sub packets = $numberOfSubPackets")
-                                var subPacketOffset = numberOfSubPackets.offset
-                                repeat(numberOfSubPackets.value.toInt()) {
+                    stack?.push(instructionForTypeId(typeId.value))
 
-                                    subPacketOffset = parsePacket(subPacketOffset, versions)
-                                }
-                                versions.add(packageVersion.value)
-                                return subPacketOffset
-                            } else {
+                    dataAsBinaryString.lengthTypeId(typeId.offset).let { lengthTypeId ->
 
-                                val lengthOfBitsOfSubPackets =
-                                    dataAsBinaryString.lengthOfBitsOfSubPackets(lengthTypeId.offset)
-                                debugPrintln("length of bits of sub-packets = $lengthOfBitsOfSubPackets")
-                                var subPacketOffset = lengthOfBitsOfSubPackets.offset
-                                var remainingBits = lengthOfBitsOfSubPackets.value
-                                while (remainingBits >= 0) {
+                        if (lengthTypeId.value == 1L) {
 
-                                    val bitsConsumed = parsePacket(subPacketOffset, versions)
-                                    remainingBits -= (bitsConsumed - subPacketOffset)
-                                    subPacketOffset = bitsConsumed
-                                }
-                                versions.add(packageVersion.value)
-                                return subPacketOffset
+                            val numberOfSubPackets = dataAsBinaryString.numberOfSubPackets(lengthTypeId.offset)
+                            subPacketOffset = numberOfSubPackets.offset
+                            repeat(numberOfSubPackets.value.toInt()) {
+
+                                subPacketOffset = parsePacket(subPacketOffset, versions, stack)
                             }
+                            versions?.add(packageVersion.value)
+                        } else {
+
+                            val lengthOfBitsOfSubPackets =
+                                dataAsBinaryString.lengthOfBitsOfSubPackets(lengthTypeId.offset)
+                            subPacketOffset = lengthOfBitsOfSubPackets.offset
+                            var remainingBits = lengthOfBitsOfSubPackets.value
+                            while (remainingBits > 0) {
+
+                                val updatedSubPacketOffset = parsePacket(subPacketOffset, versions, stack)
+                                remainingBits -= (updatedSubPacketOffset - subPacketOffset)
+                                subPacketOffset = updatedSubPacketOffset
+                            }
+                            versions?.add(packageVersion.value)
                         }
+                    }
+
+                    stack?.let { stack ->
+
+                        val values = mutableListOf<Value>()
+                        while (stack.peak() is Value) {
+
+                            values.add(0, stack.pop() as Value)
+                        }
+
+                        val instruction = stack.pop()
+                        executeInstruction(instruction, values, stack)
                     }
                 }
             }
-        } catch (_: StringIndexOutOfBoundsException) { }
+        }
 
-        return Int.MAX_VALUE
+        return subPacketOffset
+    }
+
+    private fun executeInstruction(
+        instruction: Instruction,
+        values: MutableList<Value>,
+        stack: Stack<Instruction>,
+    ) {
+
+        val result: Long = when (instruction) {
+
+            Sum -> values.sumOf { it.value }
+            Product -> values.map { it.value }.reduce { acc, value -> acc * value }
+            Minimum -> values.minOf { it.value }
+            Maximum -> values.maxOf { it.value }
+            GreaterThan -> if (values[0].value > values[1].value) 1L else 0L
+            LessThan -> if (values[0].value < values[1].value) 1L else 0L
+            EqualTo -> if (values[0].value == values[1].value) 1L else 0L
+            else -> throw RuntimeException()
+        }
+
+        stack.push(Value(result))
     }
 
     private fun String.toBinaryString() = StringBuilder().also { stringBuilder ->
@@ -120,7 +153,29 @@ class DaySixteen(data: String) {
 
     private fun binaryToLong(string: String) = string.toLong(2)
 
+    private fun instructionForTypeId(typeId: Long) = when (typeId.toInt()) {
+
+        0       -> Sum
+        1       -> Product
+        2       -> Minimum
+        3       -> Maximum
+        5       -> GreaterThan
+        6       -> LessThan
+        7       -> EqualTo
+        else    -> throw RuntimeException()
+    }
+
     data class ValueAndOffset(val value: Long, val offset: Int)
+
+    abstract class Instruction
+    data class Value(val value: Long) : Instruction()
+    object Sum : Instruction()
+    object Product : Instruction()
+    object Minimum : Instruction()
+    object Maximum : Instruction()
+    object GreaterThan : Instruction()
+    object LessThan : Instruction()
+    object EqualTo : Instruction()
 }
 
 fun daySixteen(filename: String) = DaySixteen(filename.readFile()[0])
