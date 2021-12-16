@@ -1,27 +1,68 @@
+import kotlin.math.floor
+
 object DayFifteen : Day<Long, Long>("/day-fifteen.txt") {
-
-    private val map = data.map { line ->
-
-        line.toCharArray().map { it.digitToInt() }
-    }
-
-    private val visited = List(map.size) { BooleanArray(map[it].size) { false } }
-    private val tentativeDistances = List(map.size) { LongArray(map[it].size) { Long.MAX_VALUE } }.also {
-
-        it[0][0] = 0
-    }
 
     override val partOneResult: Long
         get() {
 
-            checkNode()
+            val map = data.map { line ->
+
+                line.toCharArray().map { it.digitToInt() }
+            }
+            val visited = List(map.size) { BooleanArray(map[it].size) { false } }
+            val tentativeDistances = List(map.size) { LongArray(map[it].size) { Long.MAX_VALUE } }.also {
+
+                it[0][0] = 0
+            }
+
+            checkNode(map, visited, tentativeDistances)
             return tentativeDistances[map[0].size - 1][map.size - 1]
         }
 
     override val partTwoResult: Long
-        get() = TODO("Not yet implemented")
+        get() {
 
-    private fun checkNode() {
+            val tempMap = data.map { line ->
+
+                line.toCharArray().map { it.digitToInt() }
+            }
+
+            val map = List(tempMap.size * 5) { y ->
+
+                List(tempMap[0].size * 5) { x ->
+
+                    var tempValue = tempMap[y % tempMap.size][x % tempMap[0].size]
+                    val xMultiplier = floor(y / tempMap.size.toDouble()).toInt()
+                    val yMultiplier = floor(x / tempMap[0].size.toDouble()).toInt()
+
+                    if (xMultiplier > 0) {
+
+                        tempValue += xMultiplier
+                    }
+                    if (yMultiplier > 0) {
+
+                        tempValue += yMultiplier
+                    }
+                    if (tempValue > 9) tempValue -= 9
+
+                    tempValue
+                }
+            }
+            val visited = List(map.size) { BooleanArray(map[it].size) { false } }
+            val tentativeDistances = List(map.size) { LongArray(map[it].size) { Long.MAX_VALUE } }.also {
+
+                it[0][0] = 0
+            }
+
+            checkNode(map, visited, tentativeDistances)
+            return tentativeDistances[map[0].size - 1][map.size - 1]
+        }
+
+    private fun checkNode(
+        map: List<List<Int>>,
+        visited: List<BooleanArray>,
+        tentativeDistances: List<LongArray>,
+    ) {
 
         var currentNode: Node? = Node(0, 0)
 
@@ -49,13 +90,16 @@ object DayFifteen : Day<Long, Long>("/day-fifteen.txt") {
                 }
 
             visited[y][x] = true
-            currentNode = unvisitedMinimumNode()
+            currentNode = unvisitedMinimumNode(visited, tentativeDistances)
         }
     }
 
     data class Node(val x: Int, val y: Int)
 
-    private fun unvisitedMinimumNode(): Node? {
+    private fun unvisitedMinimumNode(
+        visited: List<BooleanArray>,
+        tentativeDistances: List<LongArray>,
+    ): Node? {
 
         var minimumX = -1
         var minimumY = -1
