@@ -1,4 +1,4 @@
 fun main() {
 
-    println(DayFifteen.partTwoResult)
+    println(daySixteen("/day-sixteen.txt").partOneResult)
 }
