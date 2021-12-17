@@ -27,12 +27,12 @@ object DaySeventeen : Day<Int, Int>("/day-seventeen.txt") {
         }
 
     override val partOneResult: Int
-    get() = calculateResults().keys.maxOrNull()!!
+    get() = calculateResults().keys.maxOrNull() ?: 0
 
     override val partTwoResult: Int
     get() = calculateResults().let { results ->
 
-        results.keys.sumOf { results[it]!!.size }
+        results.keys.sumOf { results[it]?.size ?: 0 }
     }
 
     private fun calculateResults() = mutableMapOf<Int, MutableList<Pair<Int, Int>>>().also { results ->
@@ -41,45 +41,43 @@ object DaySeventeen : Day<Int, Int>("/day-seventeen.txt") {
 
             (yRange.first .. -yRange.first).forEach { initialYVelocity ->
 
-                var done = false
                 var x = 0
                 var y = 0
                 var maxY = Integer.MIN_VALUE
                 var xVelocity = initialXVelocity
                 var yVelocity = initialYVelocity
 
-                if (xVelocity == 23 && yVelocity == -10) {
-
-                    println()
-                }
-
-                while (!done) {
+                do {
 
                     x += xVelocity
                     y += yVelocity
-                    if (xVelocity > 0) xVelocity --
-                    else if (xVelocity < 0) xVelocity ++
+
+                    if (xVelocity > 0) { xVelocity -- }
+                    else if (xVelocity < 0) { xVelocity ++ }
                     yVelocity --
 
-                    if (maxY < y) maxY = y
+                    if (maxY < y) { maxY = y }
 
-                    if (xRange.contains(x) && yRange.contains(y)) {
+                } while(!finishedChecking(x, y))
 
-                        results.putIfAbsent(maxY, mutableListOf())
-                        results[maxY]!!.add(Pair(initialXVelocity, initialYVelocity))
-                        done = true
-                    }
+                if (locationIsInTargetArea(x, y)) {
 
-                    if (xHasPassedTargetArea(x) || yHasDroppedBelowTargetArea(y)) {
-
-                        done = true
-                    }
+                    results.putIfAbsent(maxY, mutableListOf())
+                    results[maxY]?.add(Pair(initialXVelocity, initialYVelocity))
                 }
             }
         }
     }
 
-    private fun xHasPassedTargetArea(x: Int) = x > xRange.last
+    private fun finishedChecking(x: Int, y: Int) =
+        locationIsInTargetArea(x, y) || xHasPassedTargetArea(x) || yHasDroppedBelowTargetArea(y)
 
-    private fun yHasDroppedBelowTargetArea(y: Int) = y < yRange.first
+    private fun locationIsInTargetArea(x: Int, y: Int) =
+        xRange.contains(x) && yRange.contains(y)
+
+    private fun xHasPassedTargetArea(x: Int) =
+        x > xRange.last
+
+    private fun yHasDroppedBelowTargetArea(y: Int) =
+        y < yRange.first
 }
