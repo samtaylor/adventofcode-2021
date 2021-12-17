@@ -30,9 +30,12 @@ object DaySeventeen : Day<Int, Int>("/day-seventeen.txt") {
     get() = calculateResults().keys.maxOrNull()!!
 
     override val partTwoResult: Int
-    get() = calculateResults().size
+    get() = calculateResults().let { results ->
 
-    private fun calculateResults() = mutableMapOf<Int, Pair<Int, Int>>().also { results ->
+        results.keys.sumOf { results[it]!!.size }
+    }
+
+    private fun calculateResults() = mutableMapOf<Int, MutableList<Pair<Int, Int>>>().also { results ->
 
         (-xRange.last .. xRange.last).forEach { initialXVelocity ->
 
@@ -44,6 +47,11 @@ object DaySeventeen : Day<Int, Int>("/day-seventeen.txt") {
                 var maxY = Integer.MIN_VALUE
                 var xVelocity = initialXVelocity
                 var yVelocity = initialYVelocity
+
+                if (xVelocity == 23 && yVelocity == -10) {
+
+                    println()
+                }
 
                 while (!done) {
 
@@ -57,7 +65,8 @@ object DaySeventeen : Day<Int, Int>("/day-seventeen.txt") {
 
                     if (xRange.contains(x) && yRange.contains(y)) {
 
-                        results[maxY] = Pair(initialXVelocity, initialYVelocity)
+                        results.putIfAbsent(maxY, mutableListOf())
+                        results[maxY]!!.add(Pair(initialXVelocity, initialYVelocity))
                         done = true
                     }
 

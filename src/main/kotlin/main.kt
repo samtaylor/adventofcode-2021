@@ -1,4 +1,4 @@
 fun main() {
 
-    println(DaySeventeen.partOneResult)
+    println(DaySeventeen.partTwoResult)
 }
